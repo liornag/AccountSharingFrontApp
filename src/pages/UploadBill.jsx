@@ -54,7 +54,7 @@ const UploadBill = () => {
       setItems(gptItems);
       setSessionId(sessionIdFromServer);
 
-      console.log('🧾 Filtered Items:', gptItems);
+      console.log('Filtered Items:', gptItems);
 
       // Include sessionId when navigating
       navigate('/select-items', {
