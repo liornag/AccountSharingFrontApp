@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const SelectItems = () => {
   const location = useLocation();
@@ -9,11 +10,37 @@ const SelectItems = () => {
     assignedCounts: {}
   }));
 
+  const sessionId = location.state?.sessionId || ""; 
+
   const [items, setItems] = useState(initialItems);
   const [participants, setParticipants] = useState([]);
   const [newParticipantName, setNewParticipantName] = useState("");
   const [splitMode, setSplitMode] = useState("byItem");
   const [activeParticipant, setActiveParticipant] = useState("");
+
+  // Save items to DB automatically on load
+  useEffect(() => {
+    const saveItems = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.post('/save-items', {
+          items: initialItems,
+          sessionId
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        console.log("Items saved to DB.");
+      } catch (err) {
+        console.error("Failed to save items:", err.message);
+      }
+    };
+
+    if (initialItems.length > 0 && sessionId) {
+      saveItems();
+    }
+  }, [initialItems, sessionId]);
 
   const addParticipant = () => {
     const name = newParticipantName.trim();
@@ -38,12 +65,9 @@ const SelectItems = () => {
     }));
   };
 
-  const calculateTotalFor = (name) => {
-    return items.reduce((sum, item) => {
-      const cnt = item.assignedCounts[name] || 0;
-      return sum + cnt * (item.price || 0);
-    }, 0).toFixed(2);
-  };
+  const calculateTotalFor = (name) =>
+    items.reduce((sum, item) =>
+      sum + (item.assignedCounts[name] || 0) * (item.price || 0), 0).toFixed(2);
 
   const calculateEqualSplit = () => {
     const total = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
@@ -54,7 +78,6 @@ const SelectItems = () => {
     <div style={{ padding: '20px' }}>
       <h2>Scanned Receipt Items</h2>
 
-      {/* Split Mode Toggle */}
       <div style={{ marginBottom: '20px' }}>
         <label>
           <input
@@ -76,7 +99,6 @@ const SelectItems = () => {
         </label>
       </div>
 
-      {/* Add Participants */}
       <h3>Add Participants</h3>
       <div style={{ marginBottom: '10px' }}>
         <input
@@ -88,7 +110,6 @@ const SelectItems = () => {
         <button onClick={addParticipant}>Add</button>
       </div>
 
-      {/* Select Active Participant */}
       {splitMode === "byItem" && participants.length > 0 && (
         <div style={{ marginBottom: '20px' }}>
           <label>Active participant:</label>
@@ -104,7 +125,6 @@ const SelectItems = () => {
         </div>
       )}
 
-      {/* Item List */}
       <h4>Items</h4>
       {items.map(item => (
         <div key={item.id} style={{ marginBottom: '15px' }}>
@@ -121,7 +141,6 @@ const SelectItems = () => {
         </div>
       ))}
 
-      {/* Summary */}
       <div style={{ marginTop: '30px' }}>
         <h3>Summary</h3>
         {participants.map((p, i) => (

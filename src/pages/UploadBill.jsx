@@ -7,6 +7,7 @@ const UploadBill = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [items, setItems] = useState([]);
+  const [sessionId, setSessionId] = useState("");  
 
   const navigate = useNavigate();
 
@@ -31,13 +32,19 @@ const UploadBill = () => {
 
     try {
       setUploading(true);
-      const response = await axios.post('http://localhost:5100/scan-receipt', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+
+      const token = localStorage.getItem("token");
+
+    const response = await axios.post('http://localhost:5100/scan-receipt', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}`
+      },
+    });
+
 
       const gptItems = response.data.items;
+      const sessionIdFromServer = response.data.sessionId;
 
       if (!Array.isArray(gptItems)) {
         alert('Invalid response from GPT. Please try again.');
@@ -45,12 +52,17 @@ const UploadBill = () => {
       }
 
       setItems(gptItems);
-      console.log('✅ Filtered Items:', gptItems);
+      setSessionId(sessionIdFromServer);
 
-      navigate('/select-items', { state: { items: gptItems } });
+      console.log('🧾 Filtered Items:', gptItems);
+
+      // Include sessionId when navigating
+      navigate('/select-items', {
+        state: { items: gptItems, sessionId: sessionIdFromServer }
+      });
 
     } catch (error) {
-      console.error('❌ Upload failed:', error);
+      console.error('Upload failed:', error);
       alert('Upload failed. Check console for details.');
     } finally {
       setUploading(false);
