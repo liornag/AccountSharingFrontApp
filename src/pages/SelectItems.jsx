@@ -3,85 +3,143 @@ import { useLocation } from 'react-router-dom';
 
 const SelectItems = () => {
   const location = useLocation();
-  const items = location.state?.items || [];
+  const initialItems = (location.state?.items || []).map((item, idx) => ({
+    ...item,
+    id: idx,
+    assignedCounts: {}
+  }));
 
+  const [items, setItems] = useState(initialItems);
   const [participants, setParticipants] = useState([]);
   const [newParticipantName, setNewParticipantName] = useState("");
+  const [splitMode, setSplitMode] = useState("byItem");
+  const [activeParticipant, setActiveParticipant] = useState("");
 
   const addParticipant = () => {
-    if (!newParticipantName.trim()) return;
-
-    const newParticipant = {
-      name: newParticipantName.trim(),
-      selectedItems: []
-    };
-
-    setParticipants([...participants, newParticipant]);
+    const name = newParticipantName.trim();
+    if (!name || participants.includes(name)) return;
+    setParticipants([...participants, name]);
     setNewParticipantName("");
+    if (!activeParticipant) setActiveParticipant(name);
   };
 
-  const toggleItemForParticipant = (participantIndex, itemIndex) => {
-    const updated = [...participants];
-    const participant = updated[participantIndex];
-    const alreadySelected = participant.selectedItems.includes(itemIndex);
-
-    if (alreadySelected) {
-      participant.selectedItems = participant.selectedItems.filter(i => i !== itemIndex);
-    } else {
-      participant.selectedItems.push(itemIndex);
-    }
-
-    setParticipants(updated);
+  const updateAssignedCount = (itemId, delta) => {
+    setItems(prev => prev.map(item => {
+      if (item.id !== itemId) return item;
+      const prevCount = item.assignedCounts[activeParticipant] || 0;
+      const newCount = Math.min(Math.max(prevCount + delta, 0), item.quantity);
+      return {
+        ...item,
+        assignedCounts: {
+          ...item.assignedCounts,
+          [activeParticipant]: newCount
+        }
+      };
+    }));
   };
 
-  // מחשב את הסכום הכולל של משתתף לפי הפריטים שנבחרו
-  const calculateTotal = (selectedIndices) => {
-    return selectedIndices.reduce((sum, i) => {
-      const price = items[i]?.price;
-      return sum + (typeof price === 'number' ? price : 0);
+  const calculateTotalFor = (name) => {
+    return items.reduce((sum, item) => {
+      const cnt = item.assignedCounts[name] || 0;
+      return sum + cnt * (item.price || 0);
     }, 0).toFixed(2);
+  };
+
+  const calculateEqualSplit = () => {
+    const total = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+    return participants.length > 0 ? (total / participants.length).toFixed(2) : "0.00";
   };
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>Assign Items to Participants</h2>
+      <h2>Scanned Receipt Items</h2>
 
-      <div>
+      {/* Split Mode Toggle */}
+      <div style={{ marginBottom: '20px' }}>
+        <label>
+          <input
+            type="radio"
+            value="equal"
+            checked={splitMode === "equal"}
+            onChange={() => setSplitMode("equal")}
+          />
+          Split Equally
+        </label>
+        <label style={{ marginLeft: '20px' }}>
+          <input
+            type="radio"
+            value="byItem"
+            checked={splitMode === "byItem"}
+            onChange={() => setSplitMode("byItem")}
+          />
+          Split by Items
+        </label>
+      </div>
+
+      {/* Add Participants */}
+      <h3>Add Participants</h3>
+      <div style={{ marginBottom: '10px' }}>
         <input
           type="text"
           value={newParticipantName}
-          placeholder="Participant name"
+          placeholder="Enter participant name"
           onChange={(e) => setNewParticipantName(e.target.value)}
         />
-        <button onClick={addParticipant}>Add Participant</button>
+        <button onClick={addParticipant}>Add</button>
       </div>
 
-      <div style={{ marginTop: '20px' }}>
-        {participants.map((participant, pIndex) => (
-          <div key={pIndex} style={{ marginBottom: '30px', border: '1px solid #ccc', padding: '10px' }}>
-            <h3>{participant.name} - Total: ₪{calculateTotal(participant.selectedItems)}</h3>
-            <ul>
-              {items.map((item, itemIndex) => (
-                <li key={itemIndex}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={participant.selectedItems.includes(itemIndex)}
-                      onChange={() => toggleItemForParticipant(pIndex, itemIndex)}
-                    />
-                    {item.name} - ₪{item.price}
-                  </label>
-                </li>
-              ))}
-            </ul>
+      {/* Select Active Participant */}
+      {splitMode === "byItem" && participants.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <label>Active participant:</label>
+          <select
+            value={activeParticipant}
+            onChange={(e) => setActiveParticipant(e.target.value)}
+            style={{ marginLeft: '10px' }}
+          >
+            {participants.map((p, i) => (
+              <option key={i} value={p}>{p}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Item List */}
+      <h4>Items</h4>
+      {items.map(item => (
+        <div key={item.id} style={{ marginBottom: '15px' }}>
+          <strong>{item.name}</strong> x{item.quantity} @ ₪{item.price}
+          {splitMode === "byItem" && participants.length > 0 && (
+            <div style={{ marginTop: '5px', marginLeft: '20px' }}>
+              <button disabled={!activeParticipant} onClick={() => updateAssignedCount(item.id, -1)}>-</button>
+              <span style={{ margin: '0 10px' }}>
+                {activeParticipant && (item.assignedCounts[activeParticipant] || 0)}
+              </span>
+              <button disabled={!activeParticipant} onClick={() => updateAssignedCount(item.id, 1)}>+</button>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Summary */}
+      <div style={{ marginTop: '30px' }}>
+        <h3>Summary</h3>
+        {participants.map((p, i) => (
+          <div key={i} style={{ marginBottom: '15px' }}>
+            <strong>{p}:</strong> ₪
+            {splitMode === "equal" ? calculateEqualSplit() : calculateTotalFor(p)}
+            {splitMode === "byItem" && (
+              <ul>
+                {items.filter(item => (item.assignedCounts[p] || 0) > 0).map(item => (
+                  <li key={item.id}>
+                    {item.name} x{item.assignedCounts[p]} = ₪{(item.assignedCounts[p] * item.price).toFixed(2)}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
       </div>
-
-      <pre style={{ background: "#eee", padding: "10px" }}>
-        🧾 Debug Participants State:{'\n'}
-        {JSON.stringify(participants, null, 2)}
-      </pre>
     </div>
   );
 };

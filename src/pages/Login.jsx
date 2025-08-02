@@ -1,30 +1,39 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");   
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
-  
+  const [errorMessage, setErrorMessage] = useState("");
 
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage(""); // reset error before submitting
 
-    const savedUser = JSON.parse(localStorage.getItem("registeredUser"));
+    try {
+      const res = await axios.post("http://localhost:5000/login", {
+        email,
+        password
+      });
 
-    if (
-      savedUser &&
-      username === savedUser.username &&
-      password === savedUser.password
-    ) {
-      alert("You have successfully connected!");
-      localStorage.setItem("isLoggedIn", "true");
-      login(savedUser);
-      console.log("Navigated to /uploadBill");
-    } else {
-      alert("Incorrect username or password");
+      const { token, username } = res.data;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", username);
+
+      alert("התחברת בהצלחה!");
+      navigate("/uploadBill");
+
+    } catch (err) {
+      console.error("Login failed:", err);
+      if (err.response?.status === 400) {
+        setErrorMessage("User not exist");
+      } else {
+        setErrorMessage("Server failed");
+      }
     }
   };
 
@@ -32,14 +41,15 @@ function Login() {
     <div>
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <label>Username:</label>
+        <label>Email:</label>
         <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
         <br />
+
         <label>Password:</label>
         <input
           type="password"
@@ -48,8 +58,12 @@ function Login() {
           required
         />
         <br />
+
+        {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
+
         <button type="submit">Login</button>
       </form>
+
       <p>Don't have an account?</p>
       <Link to="/register"><button>Sign up</button></Link>
     </div>
