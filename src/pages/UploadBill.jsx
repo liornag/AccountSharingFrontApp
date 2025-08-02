@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './UploadBill.css';
 
-const UploadBill = () => {
+function UploadBill() {
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [items, setItems] = useState([]);
-  const [sessionId, setSessionId] = useState("");  
-
   const navigate = useNavigate();
 
   const handleImageChange = (e) => {
@@ -32,71 +30,55 @@ const UploadBill = () => {
 
     try {
       setUploading(true);
-
       const token = localStorage.getItem("token");
-
-    const response = await axios.post('http://localhost:5100/scan-receipt', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${token}`
-      },
-    });
-
-
-      const gptItems = response.data.items;
-      const sessionIdFromServer = response.data.sessionId;
-
-      if (!Array.isArray(gptItems)) {
-        alert('Invalid response from GPT. Please try again.');
-        return;
-      }
-
-      setItems(gptItems);
-      setSessionId(sessionIdFromServer);
-
-      console.log('Filtered Items:', gptItems);
-
-      // Include sessionId when navigating
-      navigate('/select-items', {
-        state: { items: gptItems, sessionId: sessionIdFromServer }
+      const res = await axios.post("http://localhost:5100/scan-receipt", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
       });
 
+      const { items, sessionId } = res.data;
+      navigate('/select-items', { state: { items, sessionId } });
+
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Upload failed. Check console for details.');
+      console.error("Upload failed:", error);
+      alert("Upload failed. Check console for details.");
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Upload Receipt Image</h2>
-      <input type="file" accept="image/*" onChange={handleImageChange} />
-      {previewUrl && (
-        <div style={{ marginTop: '10px' }}>
-          <img src={previewUrl} alt="Preview" style={{ maxWidth: '300px' }} />
-        </div>
-      )}
+    <div className="upload-container">
+      <div className="upload-card">
+        <h2>Upload Receipt</h2>
 
-      <button onClick={handleSubmit} disabled={uploading} style={{ marginTop: '10px' }}>
-        {uploading ? 'Uploading...' : 'Upload'}
-      </button>
+        <label htmlFor="upload-input" className="custom-file-label">
+          Choose Image
+        </label>
+        <input
+          type="file"
+          id="upload-input"
+          accept="image/*"
+          onChange={handleImageChange}
+        />
 
-      {items.length > 0 && (
-        <div>
-          <h2>Items:</h2>
-          <ul>
-            {items.map((item, index) => (
-              <li key={index}>
-                {item.name} - {item.price !== null ? `₪${item.price}` : 'Price not found'} (x{item.quantity})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {previewUrl && (
+          <img src={previewUrl} alt="preview" className="preview-image" />
+        )}
+
+        <button
+          className="upload-button"
+          onClick={handleSubmit}
+          disabled={uploading}
+        >
+          {uploading ? "Uploading..." : "Upload"}
+        </button>
+
+      </div>
     </div>
   );
-};
+}
 
 export default UploadBill;

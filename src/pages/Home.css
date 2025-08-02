@@ -1,0 +1,79 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.home-container {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.background-image {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: url('/assets/background.png') center/cover no-repeat;
+  filter: blur(4px) brightness(0.6); /* 👈 פחות טשטוש */
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.overlay {
+  position: relative;
+  z-index: 2;
+  background: rgba(255,255,255,0.9);
+  padding: 40px 30px;
+  border-radius: 16px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.overlay h1 {
+  font-size: 32px;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.brand {
+  color: #007bff;
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.btn-group button {
+  padding: 14px;
+  width: 100%;
+  font-size: 16px;
+  background: #007bff;
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-group button:hover {
+  background: #005dc1;
+}
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 30px 20px;
+    border-radius: 12px;
+  }
+  .overlay h1 {
+    font-size: 28px;
+  }
+}
