@@ -125,7 +125,6 @@ const SelectItems = () => {
                           checked={!!item.assignedCounts[activeParticipant]}
                           onChange={() => toggleParticipantSelection(item.id)}
                         />
-                        Selected
                       </label>
                     </div>
                   )}
