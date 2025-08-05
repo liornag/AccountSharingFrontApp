@@ -45,7 +45,21 @@ const SelectItems = () => {
     setActiveParticipant(name);
   };
 
-  const updateAssignedCount = (itemId, delta) => { /* ... */ }; // שמרתי כמו לפני
+  const toggleParticipantSelection = (itemId) => {
+    setItems(prevItems =>
+      prevItems.map(item => {
+        if (item.id !== itemId) return item;
+        const currentValue = !!item.assignedCounts[activeParticipant];
+        return {
+          ...item,
+          assignedCounts: {
+            ...item.assignedCounts,
+            [activeParticipant]: !currentValue
+          }
+        };
+      })
+    );
+  };
 
   const totalSum = items.reduce((s, i) => s + i.price * i.quantity, 0);
 
@@ -105,9 +119,14 @@ const SelectItems = () => {
                   <div>{item.name} ×{item.quantity} @ {currency}{item.price}</div>
                   {participants.length > 0 && (
                     <div className="assign-controls">
-                      <button onClick={() => updateAssignedCount(item.id, -1)}>−</button>
-                      <span>{item.assignedCounts[activeParticipant] || 0}</span>
-                      <button onClick={() => updateAssignedCount(item.id, 1)}>+</button>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={!!item.assignedCounts[activeParticipant]}
+                          onChange={() => toggleParticipantSelection(item.id)}
+                        />
+                        Selected
+                      </label>
                     </div>
                   )}
                 </div>
@@ -117,12 +136,17 @@ const SelectItems = () => {
               <div className="total-row"><strong>Total: {currency}{totalSum.toFixed(2)}</strong></div>
               {participants.map((p, i) => (
                 <div key={i} className="participant-total">
-                  <strong>{p}:</strong> {currency}{(participants.length
-                    ? (splitMode === "equal"
-                        ? totalSum / participants.length
-                        : items.reduce((sum, it) => sum + (it.assignedCounts[p] || 0) * it.price, 0))
-                    : 0
-                  ).toFixed(2)}
+                  <strong>{p}:</strong> {currency}{
+                    items.reduce((sum, it) => {
+                      const totalSelected = Object.values(it.assignedCounts || {}).filter(Boolean).length;
+                      const isSelected = !!it.assignedCounts[p];
+
+                      if (!isSelected || totalSelected === 0) return sum;
+
+                      const portion = it.price / totalSelected;
+                      return sum + portion;
+                    }, 0).toFixed(2)
+                  }
                 </div>
               ))}
             </div>
