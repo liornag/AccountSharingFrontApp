@@ -116,3 +116,78 @@
 .share-button:hover {
   background: #218838;
 }
+
+.top-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-secondary, .btn-logout {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #d9d9d9;
+}
+
+.btn-logout {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.btn-logout:hover {
+  background-color: #d9363e;
+}
+
+@media (max-width: 600px) {
+  .si-container {
+    padding: 1rem;
+  }
+
+  .top-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-secondary, .btn-logout {
+    width: 100%;
+  }
+
+  .equal-split-input input,
+  .add-participant input,
+  .active-participant select {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .controls-row {
+    flex-direction: column;
+  }
+
+  .control-group {
+    margin-bottom: 1rem;
+  }
+
+  .item-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .assign-controls {
+    margin-top: 0.5rem;
+  }
+}

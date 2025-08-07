@@ -31,12 +31,13 @@ function UploadBill() {
     try {
       setUploading(true);
       const token = localStorage.getItem("token");
-      const res = await axios.post("http://localhost:5100/scan-receipt", formData, {
+      const res = await axios.post("http://localhost:5000/scan-receipt", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
-      });
+      }); //we need to get here ssesioid
+      console.log("scan-receipt response:", res.data);
 
       const { items, sessionId } = res.data;
       navigate('/select-items', { state: { items, sessionId } });

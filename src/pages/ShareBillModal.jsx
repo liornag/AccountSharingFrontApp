@@ -13,10 +13,12 @@ const ShareBillModal = ({ billId, onClose }) => {
       if (search.length < 2) return;
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`/users/search?q=${search}`, {
+        const res = await axios.get(`http://localhost:5000/users/search?q=${search}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = Array.isArray(res.data) ? res.data : res.data.users || [];
+        const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
+        const data = (Array.isArray(res.data) ? res.data : res.data.users || [])
+          .filter(user => user._id !== currentUserId);
         setResults(data);
       } catch {
         setResults([]);
@@ -26,13 +28,18 @@ const ShareBillModal = ({ billId, onClose }) => {
   }, [search]);
 
   const handleShare = async () => {
+    if (!billId) {
+      alert("Error: Bill ID is missing. Cannot share.");
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`/bills/${billId}/share`, { userIds: selectedUsers }, {
+      await axios.post(`http://localhost:5000/bills/${billId}/share`, { userIds: selectedUsers }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("✅ Shared successfully!");
+      alert("Shared successfully!");
       onClose();
     } catch (err) {
       alert(err?.response?.data?.error || "Sharing failed. Please try again.");
@@ -46,6 +53,8 @@ const ShareBillModal = ({ billId, onClose }) => {
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
+
+  console.log("📦 ShareBillModal received billId:", billId);
 
   return (
     <div className="modal-backdrop">

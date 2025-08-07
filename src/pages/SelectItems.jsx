@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ShareBillModal from "./ShareBillModal";
 import "./SelectItems.css";
 
 const SelectItems = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const itemsFromOCR = location.state?.items || [];
 
   const [items, setItems] = useState(
@@ -23,11 +24,22 @@ const SelectItems = () => {
   const sessionId = location.state?.sessionId;
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || billId) return;
+
     axios.post("http://localhost:5000/create-bill", { sessionId }, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-    }).then(res => setBillId(res.data.billId)).catch(console.error);
-  }, [sessionId]);
+    })
+    .then(res => {
+      setBillId(res.data.billId);
+    })
+    .catch(err => {
+      if (err.response?.status === 409) {
+        console.warn("Bill already exists for this sessionId.");
+      } else {
+        console.error("Failed to create bill:", err.response?.data || err.message);
+      }
+    });
+  }, [sessionId, billId]);
 
   useEffect(() => {
     if (splitMode === "equal") {
@@ -61,11 +73,26 @@ const SelectItems = () => {
     );
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const handleGoBackToScan = () => {
+    navigate("/uploadBill");
+  };
+
   const totalSum = items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   return (
     <div className="si-wrapper">
       <div className="si-container">
+        <div className="top-controls">
+          <button className="btn-secondary" onClick={handleGoBackToScan}>Back to Scan</button>
+          <button className="btn-logout" onClick={handleLogout}>Logout</button>
+        </div>
+
+
         <h2>Scanned Receipt Items</h2>
 
         <div className="controls-row">
@@ -139,9 +166,7 @@ const SelectItems = () => {
                     items.reduce((sum, it) => {
                       const totalSelected = Object.values(it.assignedCounts || {}).filter(Boolean).length;
                       const isSelected = !!it.assignedCounts[p];
-
                       if (!isSelected || totalSelected === 0) return sum;
-
                       const portion = it.price / totalSelected;
                       return sum + portion;
                     }, 0).toFixed(2)
