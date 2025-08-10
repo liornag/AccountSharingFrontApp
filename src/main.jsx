@@ -9,7 +9,8 @@ import ProtectedRoute from "./pages/ProtectedRoute.jsx";
 import UploadBill from "./pages/UploadBill.jsx";
 import Register from "./pages/Register.jsx";
 import SelectItems from './pages/SelectItems';
-import { AuthProvider } from "./hooks/useAuth"
+import { AuthProvider } from "./hooks/useAuth";
+import Bill from "./pages/Bill.jsx";
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -21,7 +22,9 @@ createRoot(document.getElementById('root')).render(
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/uploadBill" element={<ProtectedRoute><UploadBill /></ProtectedRoute>} />
-          <Route path="/select-items" element={<ProtectedRoute><SelectItems /></ProtectedRoute>} />
+          <Route path="/select-items" element={<ProtectedRoute><SelectItems /></ProtectedRoute>} />,
+          <Route path="/bill/:billId" element={<ProtectedRoute><Bill/></ProtectedRoute>} />
+
         </Routes>
       </AuthProvider>
     </BrowserRouter>

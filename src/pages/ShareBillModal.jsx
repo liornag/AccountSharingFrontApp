@@ -54,7 +54,7 @@ const ShareBillModal = ({ billId, onClose }) => {
     );
   };
 
-  console.log("📦 ShareBillModal received billId:", billId);
+  console.log("ShareBillModal received billId:", billId);
 
   return (
     <div className="modal-backdrop">

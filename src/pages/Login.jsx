@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BsPersonCircle } from "react-icons/bs";
 import "./Login.css";
+import {useAuth} from "../hooks/useAuth";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
+  const {login} = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,9 +18,7 @@ function Login() {
     try {
       const res = await axios.post("http://localhost:5000/login", { email, password });
       const { token, username } = res.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("username", username);
-      navigate("/uploadBill");
+      await login({username});
     } catch (err) {
       console.error("Login failed:", err);
       if (err.response?.status === 400) setErrorMessage("User not exist");
