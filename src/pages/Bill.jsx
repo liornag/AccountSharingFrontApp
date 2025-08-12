@@ -5,7 +5,7 @@ function UserProfile() {
 
   return (
     <div>
-      <h1>User Profile for ID: {billid}</h1>
+      <h1>Bill #{billId}</h1>
       {/* Fetch user data based on userId */}
     </div>
   );

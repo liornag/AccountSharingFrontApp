@@ -1,44 +1,51 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import "./ShareBillModal.css";
+import api from "../lib/api"; 
+import { useAuth } from "../hooks/useAuth";
+
+const safeDecodeUserId = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.sub || payload.id || payload.userId || null;
+  } catch {
+    return null;
+  }
+};
 
 const ShareBillModal = ({ billId, onClose }) => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth(); //according to authprovider
 
   useEffect(() => {
     const fetchUsers = async () => {
       if (search.length < 2) return;
       try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:5000/users/search?q=${search}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
-        const data = (Array.isArray(res.data) ? res.data : res.data.users || [])
-          .filter(user => user._id !== currentUserId);
-        setResults(data);
+        //we have automatic authorization when we usen this api
+        const res = await api.get(`/users/search`, { params: { q: search } });
+        const currentUserId = user?.token ? safeDecodeUserId(user.token) : null;
+        const data = (Array.isArray(res.data) ? res.data : res.data.users || []);
+        setResults(
+          currentUserId ? data.filter(u => u._id !== currentUserId) : data
+        );
       } catch {
+        console.warn("users/search failed:", e?.response?.data || e.message);
         setResults([]);
       }
     };
     fetchUsers();
-  }, [search]);
+  }, [search, user]);
 
   const handleShare = async () => {
     if (!billId) {
       alert("Error: Bill ID is missing. Cannot share.");
       return;
     }
-
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(`http://localhost:5000/bills/${billId}/share`, { userIds: selectedUsers }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post(`/bills/${billId}/share`, { userIds: selectedUsers });
       alert("Shared successfully!");
       onClose();
     } catch (err) {

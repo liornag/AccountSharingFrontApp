@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../lib/api";   
 import ShareBillModal from "./ShareBillModal";
 import "./SelectItems.css";
+import { useRef } from "react";
+import { useAuth } from "../hooks/useAuth";
 
 const SelectItems = () => {
   const location = useLocation();
@@ -20,26 +22,29 @@ const SelectItems = () => {
   const [currency, setCurrency] = useState("₪");
   const [billId, setBillId] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
+  const { logout } = useAuth();
   const sessionId = location.state?.sessionId;
+  const didCreateBill = useRef(false);
 
   useEffect(() => {
-    if (!sessionId || billId) return;
+    if (!sessionId || billId || didCreateBill.current) return;
+    didCreateBill.current = true;
 
-    axios.post("http://localhost:5000/create-bill", { sessionId }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-    })
-    .then(res => {
-      setBillId(res.data.billId);
-    })
-    .catch(err => {
-      if (err.response?.status === 409) {
-        console.warn("Bill already exists for this sessionId.");
-      } else {
-        console.error("Failed to create bill:", err.response?.data || err.message);
-      }
-    });
-  }, [sessionId, billId]);
+    api.post("/create-bill", { sessionId })
+      .then((res) => setBillId(res.data.billId))
+      .catch(err => {
+        if (err.response?.status === 409) {
+          console.warn("Bill already exists for this sessionId.");
+        } else if (err.response?.status === 401) {
+          console.error("Failed to create bill:", err.response?.data || err.message);
+          const redirect = encodeURIComponent("/select-items");
+          navigate(`/login?redirect=${redirect}`);
+        } else {
+          console.error("Failed to create bill:", err.response?.data || err.message);
+        }
+      });
+  }, [sessionId, billId, navigate]);
+
 
   useEffect(() => {
     if (splitMode === "equal") {
@@ -73,10 +78,7 @@ const SelectItems = () => {
     );
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  const handleLogout = () => logout();
 
   const handleGoBackToScan = () => {
     navigate("/uploadBill");

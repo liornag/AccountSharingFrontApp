@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { BsPersonCircle } from "react-icons/bs";
 import "./Login.css";
@@ -10,7 +10,12 @@ function Login() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();  
   const {login} = useAuth();
+
+  //if exist redirect
+  const params = new URLSearchParams(location.search); 
+  const redirect = params.get("redirect"); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +23,7 @@ function Login() {
     try {
       const res = await axios.post("http://localhost:5000/login", { email, password });
       const { token, username } = res.data;
-      await login({username});
+      await login({ username, token }, redirect); //to the useAuth
     } catch (err) {
       console.error("Login failed:", err);
       if (err.response?.status === 400) setErrorMessage("User not exist");

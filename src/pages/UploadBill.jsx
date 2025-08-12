@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './UploadBill.css';
+import api from "../lib/api";
 
 function UploadBill() {
   const [imageFile, setImageFile] = useState(null);
@@ -30,12 +31,9 @@ function UploadBill() {
 
     try {
       setUploading(true);
-      const token = localStorage.getItem("token");
-      const res = await axios.post("http://localhost:5000/scan-receipt", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
-        },
+      // const token = localStorage.getItem("token");
+      const res = await api.post("/scan-receipt", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       }); //we need to get here ssesioid
       console.log("scan-receipt response:", res.data);
 
