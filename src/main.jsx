@@ -23,7 +23,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<Login />} />
           <Route path="/uploadBill" element={<ProtectedRoute><UploadBill /></ProtectedRoute>} />
           <Route path="/select-items" element={<ProtectedRoute><SelectItems /></ProtectedRoute>} />,
-          <Route path="/bill/:billId" element={<ProtectedRoute><Bill/></ProtectedRoute>} />
+          <Route path="/bill/:sessionId" element={<ProtectedRoute><Bill/></ProtectedRoute>} />
 
         </Routes>
       </AuthProvider>

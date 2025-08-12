@@ -1,42 +1,42 @@
 import React, { useState, useEffect } from "react";
 import "./ShareBillModal.css";
-import api from "../lib/api"; 
-import { useAuth } from "../hooks/useAuth";
-
-const safeDecodeUserId = (token) => {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.sub || payload.id || payload.userId || null;
-  } catch {
-    return null;
-  }
-};
+import api from "../lib/api";
 
 const ShareBillModal = ({ billId, onClose }) => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth(); //according to authprovider
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (search.length < 2) return;
+    const q = search.trim();
+    if (q.length < 2) {
+      setResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const id = setTimeout(async () => {
       try {
-        //we have automatic authorization when we usen this api
-        const res = await api.get(`/users/search`, { params: { q: search } });
-        const currentUserId = user?.token ? safeDecodeUserId(user.token) : null;
-        const data = (Array.isArray(res.data) ? res.data : res.data.users || []);
-        setResults(
-          currentUserId ? data.filter(u => u._id !== currentUserId) : data
-        );
-      } catch {
-        console.warn("users/search failed:", e?.response?.data || e.message);
-        setResults([]);
+        const res = await api.get("/users/search", {
+          params: { q },
+          signal: controller.signal, // Axios v1
+        });
+        const data = Array.isArray(res.data) ? res.data : res.data.users || [];
+        setResults(data);
+      } catch (e) {
+        if (e.name !== "CanceledError" && e.name !== "AbortError") {
+          console.warn("users/search failed:", e?.response?.data || e.message);
+          setResults([]);
+        }
       }
+    }, 300); // debounce
+
+    return () => {
+      clearTimeout(id);
+      controller.abort();
     };
-    fetchUsers();
-  }, [search, user]);
+  }, [search]);
 
   const handleShare = async () => {
     if (!billId) {
@@ -56,8 +56,8 @@ const ShareBillModal = ({ billId, onClose }) => {
   };
 
   const toggleUser = (id) => {
-    setSelectedUsers(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    setSelectedUsers((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
@@ -75,18 +75,22 @@ const ShareBillModal = ({ billId, onClose }) => {
           onChange={(e) => setSearch(e.target.value)}
         />
         <ul className="results-list">
-          {results.length ? results.map(u => (
-            <li key={u._id}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedUsers.includes(u._id)}
-                  onChange={() => toggleUser(u._id)}
-                />
-                <span>{u.username} ({u.email})</span>
-              </label>
-            </li>
-          )) : (
+          {results.length ? (
+            results.map((u) => (
+              <li key={u._id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.includes(u._id)}
+                    onChange={() => toggleUser(u._id)}
+                  />
+                  <span>
+                    {u.username} ({u.email})
+                  </span>
+                </label>
+              </li>
+            ))
+          ) : (
             <li className="no-results">No users found</li>
           )}
         </ul>
@@ -98,7 +102,9 @@ const ShareBillModal = ({ billId, onClose }) => {
           >
             {loading ? "Sharing..." : "Share"}
           </button>
-          <button className="btn secondary" onClick={onClose}>Cancel</button>
+          <button className="btn secondary" onClick={onClose}>
+            Cancel
+          </button>
         </div>
       </div>
     </div>
