@@ -25,6 +25,7 @@ export default function Bill() {
   const [err, setErr] = useState(null);
   const [items, setItems] = useState([]);
   const didFetch = useRef(false);
+  const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
     if (!sessionId || didFetch.current) return;
@@ -42,10 +43,16 @@ export default function Bill() {
         setItems(itemsRes.data?.items ?? []);
         const rawUser = localStorage.getItem("user");
         if (rawUser) {
-          const { token } = JSON.parse(rawUser);
-          const me = token ? safeDecodeUserId(token) : null;
-          setIsOwner(!!me && String(billData.ownerId) === String(me));
-        }
+        const { token } = JSON.parse(rawUser);
+        const me = token ? safeDecodeUserId(token) : null;
+        const owner = String(billData.ownerId) === String(me);
+        const shared = Array.isArray(billData.sharedWithUsers)
+          ? billData.sharedWithUsers.map(String).includes(String(me))
+          : false;
+
+        setIsOwner(owner);
+        setCanShare(owner || shared); 
+      }
       } catch (e) {
         setErr(e?.response?.data?.error || e.message);
       } finally {
@@ -69,13 +76,6 @@ export default function Bill() {
           <button className="bill-btn secondary" onClick={() => navigate(-1)}>
             Back
           </button>
-
-          {/* just the owners can share*/}
-          {isOwner && (
-            <button className="bill-btn share" onClick={() => setIsShareModalOpen(true)}>
-              Share with friends
-            </button>
-          )}
         </div>
 
         <h2 className="bill-title">Shared Receipt</h2>
