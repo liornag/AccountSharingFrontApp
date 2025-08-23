@@ -31,7 +31,7 @@ function Register() {
     }
 
     try {
-      await axios.post("http://localhost:5000/register", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/register`, {
         username,
         email,
         password
@@ -46,7 +46,6 @@ function Register() {
 
   return (
     <div className="auth-page">
-      <div className="background-image" />
       <div className="auth-container">
         <div className="auth-card">
           <BsPersonCircle className="auth-icon" />

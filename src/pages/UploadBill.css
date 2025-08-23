@@ -1,5 +1,6 @@
 html, body, #root {
   height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
   background: #eef3f8;
@@ -8,24 +9,38 @@ html, body, #root {
 
 .upload-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  gap: 20px;
   align-items: center;
-  height: 100vh; 
-  width: 100vw;
+  height: 100%; 
+  width: 70%;
   background: #eef3f8;
   padding: 20px;
   box-sizing: border-box;
+  border: 2px;
 }
 
+.stepper-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:center;
+  background: white;
+  width: 100%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+}
 
 .upload-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items:left;
   background: #ffffff;
-  padding: 40px 30px;
+
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  width: 100%;
-  text-align: center;
+  width: 80%;
 }
 
 .upload-card h2 {

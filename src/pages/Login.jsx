@@ -11,17 +11,18 @@ function Login() {
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const location = useLocation();  
-  const {login} = useAuth();
+  const { login } = useAuth();
 
   //if exist redirect
   const params = new URLSearchParams(location.search); 
-  const redirect = params.get("redirect"); 
+  //const redirect = params.get("redirect")
+  const redirect = sessionStorage.getItem('redirectAfterLogin')
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     try {
-      const res = await axios.post("http://localhost:5000/login", { email, password });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/login`, { email, password });
       const { token, username } = res.data;
       await login({ username, token }, redirect); //to the useAuth
     } catch (err) {
@@ -33,7 +34,6 @@ function Login() {
 
   return (
     <div className="login-page">
-      <div className="background-image" />
       <div className="login-container">
         <div className="login-card">
           <BsPersonCircle className="login-icon" />

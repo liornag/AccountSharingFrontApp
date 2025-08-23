@@ -19,7 +19,7 @@ export const setAuthToken = (token) => {
 // restart from local storage
 (() => {
   try {
-    const raw = localStorage.getItem("user");
+    const raw = sessionStorage.getItem("user");
     if (raw) {
       const { token } = JSON.parse(raw);
       if (token) setAuthToken(token);
